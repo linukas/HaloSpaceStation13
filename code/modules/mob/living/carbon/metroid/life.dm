@@ -2,12 +2,13 @@
 	set invisibility = 0
 	set background = 1
 
-	if (src.transforming)
+	if (src.monkeyizing)
 		return
 
 	..()
 
 	if(stat != DEAD)
+		handle_chemicals_in_body()
 		handle_nutrition()
 
 		if (!client)
@@ -17,7 +18,18 @@
 					handle_AI()
 			handle_speech_and_mood()
 
-/mob/living/carbon/slime/handle_environment(datum/gas_mixture/environment)
+	var/datum/gas_mixture/environment
+	if(src.loc)
+		environment = loc.return_air()
+
+	regular_hud_updates()
+
+	if(environment)
+		handle_environment(environment) // Handle temperature/pressure differences between body and environment
+
+	handle_regular_status_updates() // Status updates, death etc.
+
+/mob/living/carbon/slime/proc/handle_environment(datum/gas_mixture/environment)
 	if(!environment)
 		adjustToxLoss(rand(10,20))
 		return
@@ -69,22 +81,15 @@
 	temp_change = (temperature - current)
 	return temp_change
 
-/mob/living/carbon/slime/handle_chemicals_in_body()
-	chem_effects.Cut()
-	analgesic = 0
+/mob/living/carbon/slime/proc/handle_chemicals_in_body()
 
-	if(touching) touching.metabolize()
-	if(ingested) ingested.metabolize()
-	if(bloodstr) bloodstr.metabolize()
-
-	if(CE_PAINKILLER in chem_effects)
-		analgesic = chem_effects[CE_PAINKILLER]
+	if(reagents) reagents.metabolize(src)
 
 	src.updatehealth()
 
 	return //TODO: DEFERRED
 
-/mob/living/carbon/slime/handle_regular_status_updates()
+/mob/living/carbon/slime/proc/handle_regular_status_updates()
 
 	src.blinded = null
 
@@ -200,12 +205,9 @@
 	if(hungry == 2 && !client) // if a slime is starving, it starts losing its friends
 		if(Friends.len > 0 && prob(1))
 			var/mob/nofriend = pick(Friends)
-			if(nofriend && Friends[nofriend])
-				Friends[nofriend] -= 1
-				if (Friends[nofriend] <= 0)
-					Friends[nofriend] = null
-					Friends -= nofriend
-					Friends -= null
+			--Friends[nofriend]
+			if (Friends[nofriend] <= 0)
+				Friends -= nofriend
 
 	if(!Target)
 		if(will_hunt(hungry) || attacked || rabid) // Only add to the list if we need to
@@ -246,7 +248,7 @@
 							Target = C
 							break
 
-						if(isalien(C) || issmall(C) || isanimal(C))
+						if(isalien(C) || ismonkey(C) || isanimal(C))
 							Target = C
 							break
 
@@ -302,7 +304,7 @@
 		if(Target.Adjacent(src))
 			if(istype(Target, /mob/living/silicon)) // Glomp the silicons
 				if(!Atkcool)
-					a_intent = I_HURT
+					a_intent = "hurt"
 					UnarmedAttack(Target)
 					Atkcool = 1
 					spawn(45)
@@ -316,12 +318,12 @@
 					spawn(45)
 						Atkcool = 0
 
-					a_intent = I_DISARM
+					a_intent = "disarm"
 					UnarmedAttack(Target)
 
 			else
 				if(!Atkcool)
-					a_intent = I_GRAB
+					a_intent = "grab"
 					UnarmedAttack(Target)
 
 		else if(Target in view(7, src))
@@ -339,9 +341,9 @@
 				frenemy = S
 		if (frenemy && prob(1))
 			if (frenemy.colour == colour)
-				a_intent = I_HELP
+				a_intent = "help"
 			else
-				a_intent = I_HURT
+				a_intent = "hurt"
 			UnarmedAttack(frenemy)
 
 	var/sleeptime = movement_delay()
@@ -353,10 +355,10 @@
 /mob/living/carbon/slime/proc/handle_speech_and_mood()
 	//Mood starts here
 	var/newmood = ""
-	a_intent = I_HELP
+	a_intent = "help"
 	if (rabid || attacked)
 		newmood = "angry"
-		a_intent = I_HURT
+		a_intent = "hurt"
 	else if (Target) newmood = "mischevous"
 
 	if (!newmood)

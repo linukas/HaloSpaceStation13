@@ -45,9 +45,11 @@ obj/machinery/atmospherics/pipe/zpipe/New()
 			initialize_directions = EAST
 		if(SOUTHWEST)
 			initialize_directions = SOUTH
+	initialize()
 
-/obj/machinery/atmospherics/pipe/zpipe/hide(var/i)
-	if(istype(loc, /turf/simulated))
+
+obj/machinery/atmospherics/pipe/zpipe/hide(var/i)
+	if(level == 1 && istype(loc, /turf/simulated))
 		invisibility = i ? 101 : 0
 	update_icon()
 
@@ -73,12 +75,12 @@ obj/machinery/atmospherics/pipe/zpipe/check_pressure(pressure)
 	else return 1
 
 obj/machinery/atmospherics/pipe/zpipe/proc/burst()
-	src.visible_message("<span class='warning'>\The [src] bursts!</span>");
+	src.visible_message("\red \bold [src] bursts!");
 	playsound(src.loc, 'sound/effects/bang.ogg', 25, 1)
 	var/datum/effect/effect/system/smoke_spread/smoke = new
 	smoke.set_up(1,0, src.loc, 0)
 	smoke.start()
-	qdel(src) // NOT qdel.
+	del(src)
 
 obj/machinery/atmospherics/pipe/zpipe/proc/normalize_dir()
 	if(dir==3)
@@ -86,7 +88,7 @@ obj/machinery/atmospherics/pipe/zpipe/proc/normalize_dir()
 	else if(dir==12)
 		set_dir(4)
 
-obj/machinery/atmospherics/pipe/zpipe/Destroy()
+obj/machinery/atmospherics/pipe/zpipe/Del()
 	if(node1)
 		node1.disconnect(src)
 	if(node2)
@@ -102,12 +104,12 @@ obj/machinery/atmospherics/pipe/zpipe/update_icon()
 obj/machinery/atmospherics/pipe/zpipe/disconnect(obj/machinery/atmospherics/reference)
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
-			qdel(parent)
+			del(parent)
 		node1 = null
 
 	if(reference == node2)
 		if(istype(node2, /obj/machinery/atmospherics/pipe))
-			qdel(parent)
+			del(parent)
 		node2 = null
 
 	return null
@@ -149,7 +151,7 @@ obj/machinery/atmospherics/pipe/zpipe/up/initialize()
 
 
 	var/turf/T = src.loc			// hide if turf is not intact
-	hide(!T.is_plating())
+	hide(T.intact)
 
 ///////////////////////
 // and the down pipe //
@@ -190,7 +192,7 @@ obj/machinery/atmospherics/pipe/zpipe/down/initialize()
 
 
 	var/turf/T = src.loc			// hide if turf is not intact
-	hide(!T.is_plating())
+	hide(T.intact)
 
 ///////////////////////
 // supply/scrubbers  //

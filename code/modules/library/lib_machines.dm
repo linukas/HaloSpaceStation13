@@ -122,7 +122,6 @@ datum/borrowbook // Datum used to keep track of who has borrowed what when and f
 	density = 1
 	var/arcanecheckout = 0
 	var/screenstate = 0 // 0 - Main Menu, 1 - Inventory, 2 - Checked Out, 3 - Check Out a Book
-	var/sortby = "author"
 	var/buffer_book
 	var/buffer_mob
 	var/upload_category = "Fiction"
@@ -150,7 +149,7 @@ datum/borrowbook // Datum used to keep track of who has borrowed what when and f
 			if(src.arcanecheckout)
 				new /obj/item/weapon/book/tome(src.loc)
 				user << "<span class='warning'>Your sanity barely endures the seconds spent in the vault's browsing window. The only thing to remind you of this when you stop browsing is a dusty old tome sitting on the desk. You don't really remember printing it.</span>"
-				user.visible_message("<span class='notice'>\The [user] stares at the blank screen for a few moments, \his expression frozen in fear. When \he finally awakens from it, \he looks a lot older.</span>", 2)
+				user.visible_message("[user] stares at the blank screen for a few moments, his expression frozen in fear. When he finally awakens from it, he looks a lot older.", 2)
 				src.arcanecheckout = 0
 		if(1)
 			// Inventory
@@ -196,8 +195,9 @@ datum/borrowbook // Datum used to keep track of who has borrowed what when and f
 			else
 				dat += {"<A href='?src=\ref[src];orderbyid=1'>(Order book by SS<sup>13</sup>BN)</A><BR><BR>
 				<table>
-				<tr><td><A href='?src=\ref[src];sort=author>AUTHOR</A></td><td><A href='?src=\ref[src];sort=title>TITLE</A></td><td><A href='?src=\ref[src];sort=category>CATEGORY</A></td><td></td></tr>"}
-				var/DBQuery/query = dbcon_old.NewQuery("SELECT id, author, title, category FROM library ORDER BY [sortby]")
+				<tr><td>AUTHOR</td><td>TITLE</td><td>CATEGORY</td><td></td></tr>"}
+
+				var/DBQuery/query = dbcon_old.NewQuery("SELECT id, author, title, category FROM library")
 				query.Execute()
 
 				while(query.NextRow())
@@ -237,12 +237,9 @@ datum/borrowbook // Datum used to keep track of who has borrowed what when and f
 	user << browse(dat, "window=library")
 	onclose(user, "library")
 
-/obj/machinery/librarycomp/emag_act(var/remaining_charges, var/mob/user)
-	if (src.density && !src.emagged)
-		src.emagged = 1
-		return 1
-
 /obj/machinery/librarycomp/attackby(obj/item/weapon/W as obj, mob/user as mob)
+	if (src.density && istype(W, /obj/item/weapon/card/emag))
+		src.emagged = 1
 	if(istype(W, /obj/item/weapon/barcodescanner))
 		var/obj/item/weapon/barcodescanner/scanner = W
 		scanner.computer = src
@@ -303,12 +300,12 @@ datum/borrowbook // Datum used to keep track of who has borrowed what when and f
 		if(checkoutperiod < 1)
 			checkoutperiod = 1
 	if(href_list["editbook"])
-		buffer_book = sanitizeSafe(input("Enter the book's title:") as text|null)
+		buffer_book = sanitize(copytext(input("Enter the book's title:") as text|null,1,MAX_MESSAGE_LEN))
 	if(href_list["editmob"])
-		buffer_mob = sanitize(input("Enter the recipient's name:") as text|null, MAX_NAME_LEN)
+		buffer_mob = sanitize(copytext(input("Enter the recipient's name:") as text|null,1,MAX_NAME_LEN))
 	if(href_list["checkout"])
 		var/datum/borrowbook/b = new /datum/borrowbook
-		b.bookname = sanitizeSafe(buffer_book)
+		b.bookname = sanitize(buffer_book)
 		b.mobname = sanitize(buffer_mob)
 		b.getdate = world.time
 		b.duedate = world.time + (checkoutperiod * 600)
@@ -320,7 +317,7 @@ datum/borrowbook // Datum used to keep track of who has borrowed what when and f
 		var/obj/item/weapon/book/b = locate(href_list["delbook"])
 		inventory.Remove(b)
 	if(href_list["setauthor"])
-		var/newauthor = sanitize(input("Enter the author's name: ") as text|null)
+		var/newauthor = sanitize(copytext(input("Enter the author's name: ") as text|null,1,MAX_MESSAGE_LEN))
 		if(newauthor)
 			scanner.cache.author = newauthor
 	if(href_list["setcategory"])
@@ -389,8 +386,6 @@ datum/borrowbook // Datum used to keep track of who has borrowed what when and f
 			if(isnum(orderid))
 				var/nhref = "src=\ref[src];targetid=[orderid]"
 				spawn() src.Topic(nhref, params2list(nhref), src)
-	if(href_list["sort"] in list("author", "title", "category"))
-		sortby = href_list["sort"]
 	src.add_fingerprint(usr)
 	src.updateUsrDialog()
 	return
@@ -468,6 +463,6 @@ datum/borrowbook // Datum used to keep track of who has borrowed what when and f
 		b.dat = O:info
 		b.name = "Print Job #" + "[rand(100, 999)]"
 		b.icon_state = "book[rand(1,7)]"
-		qdel(O)
+		del(O)
 	else
 		..()

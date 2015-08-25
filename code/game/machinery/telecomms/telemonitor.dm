@@ -9,7 +9,7 @@
 
 /obj/machinery/computer/telecomms/monitor
 	name = "Telecommunications Monitor"
-	icon_screen = "comm_monitor"
+	icon_state = "comm_monitor"
 
 	var/screen = 0				// the screen number:
 	var/list/machinelist = list()	// the machines located by the computer
@@ -128,9 +128,9 @@
 			playsound(src.loc, 'sound/items/Screwdriver.ogg', 50, 1)
 			if(do_after(user, 20))
 				if (src.stat & BROKEN)
-					user << "<span class='notice'>The broken glass falls out.</span>"
+					user << "\blue The broken glass falls out."
 					var/obj/structure/computerframe/A = new /obj/structure/computerframe( src.loc )
-					new /obj/item/weapon/material/shard( src.loc )
+					new /obj/item/weapon/shard( src.loc )
 					var/obj/item/weapon/circuitboard/comm_monitor/M = new /obj/item/weapon/circuitboard/comm_monitor( A )
 					for (var/obj/C in src)
 						C.loc = src.loc
@@ -138,9 +138,9 @@
 					A.state = 3
 					A.icon_state = "3"
 					A.anchored = 1
-					qdel(src)
+					del(src)
 				else
-					user << "<span class='notice'>You disconnect the monitor.</span>"
+					user << "\blue You disconnect the monitor."
 					var/obj/structure/computerframe/A = new /obj/structure/computerframe( src.loc )
 					var/obj/item/weapon/circuitboard/comm_monitor/M = new /obj/item/weapon/circuitboard/comm_monitor( A )
 					for (var/obj/C in src)
@@ -149,14 +149,10 @@
 					A.state = 4
 					A.icon_state = "4"
 					A.anchored = 1
-					qdel(src)
+					del(src)
+		else if(istype(D, /obj/item/weapon/card/emag) && !emagged)
+			playsound(src.loc, 'sound/effects/sparks4.ogg', 75, 1)
+			emagged = 1
+			user << "\blue You you disable the security protocols"
 		src.updateUsrDialog()
 		return
-
-/obj/machinery/computer/telecomms/monitor/emag_act(var/remaining_charges, var/mob/user)
-	if(!emagged)
-		playsound(src.loc, 'sound/effects/sparks4.ogg', 75, 1)
-		emagged = 1
-		user << "<span class='notice'>You you disable the security protocols</span>"
-		src.updateUsrDialog()
-		return 1

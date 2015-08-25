@@ -20,11 +20,6 @@
 
 	return 1
 
-/obj/machinery/portable_atmospherics/Destroy()
-	qdel(air_contents)
-	qdel(holding)
-	..()
-
 /obj/machinery/portable_atmospherics/initialize()
 	. = ..()
 	spawn()
@@ -40,8 +35,8 @@
 	else
 		update_icon()
 
-/obj/machinery/portable_atmospherics/Destroy()
-	qdel(air_contents)
+/obj/machinery/portable_atmospherics/Del()
+	del(air_contents)
 
 	..()
 
@@ -68,7 +63,6 @@
 	//Perform the connection
 	connected_port = new_port
 	connected_port.connected_device = src
-	connected_port.on = 1 //Activate port updates
 
 	anchored = 1 //Prevent movement
 
@@ -104,6 +98,7 @@
 		network.update = 1
 
 /obj/machinery/portable_atmospherics/attackby(var/obj/item/weapon/W as obj, var/mob/user as mob)
+	var/obj/icon = src
 	if ((istype(W, /obj/item/weapon/tank) && !( src.destroyed )))
 		if (src.holding)
 			return
@@ -117,26 +112,39 @@
 	else if (istype(W, /obj/item/weapon/wrench))
 		if(connected_port)
 			disconnect()
-			user << "<span class='notice'>You disconnect \the [src] from the port.</span>"
+			user << "\blue You disconnect [name] from the port."
 			update_icon()
 			return
 		else
 			var/obj/machinery/atmospherics/portables_connector/possible_port = locate(/obj/machinery/atmospherics/portables_connector/) in loc
 			if(possible_port)
 				if(connect(possible_port))
-					user << "<span class='notice'>You connect \the [src] to the port.</span>"
+					user << "\blue You connect [name] to the port."
 					update_icon()
 					return
 				else
-					user << "<span class='notice'>\The [src] failed to connect to the port.</span>"
+					user << "\blue [name] failed to connect to the port."
 					return
 			else
-				user << "<span class='notice'>Nothing happens.</span>"
+				user << "\blue Nothing happens."
 				return
 
 	else if ((istype(W, /obj/item/device/analyzer)) && Adjacent(user))
-		var/obj/item/device/analyzer/A = W
-		A.analyze_gases(src, user)
+		visible_message("\red [user] has used [W] on \icon[icon]")
+		if(air_contents)
+			var/pressure = air_contents.return_pressure()
+			var/total_moles = air_contents.total_moles
+
+			user << "\blue Results of analysis of \icon[icon]"
+			if (total_moles>0)
+				user << "\blue Pressure: [round(pressure,0.1)] kPa"
+				for(var/g in air_contents.gas)
+					user << "\blue [gas_data.name[g]]: [round((air_contents.gas[g] / total_moles) * 100)]%"
+				user << "\blue Temperature: [round(air_contents.temperature-T0C)]&deg;C"
+			else
+				user << "\blue Tank is empty!"
+		else
+			user << "\blue Tank is empty!"
 		return
 
 	return
@@ -148,13 +156,6 @@
 	var/power_losses
 	var/last_power_draw = 0
 	var/obj/item/weapon/cell/cell
-
-/obj/machinery/portable_atmospherics/powered/powered()
-	if(use_power) //using area power
-		return ..()
-	if(cell && cell.charge)
-		return 1
-	return 0
 
 /obj/machinery/portable_atmospherics/powered/attackby(obj/item/I, mob/user)
 	if(istype(I, /obj/item/weapon/cell))
@@ -168,21 +169,20 @@
 		C.add_fingerprint(user)
 		cell = C
 		C.loc = src
-		user.visible_message("<span class='notice'>[user] opens the panel on [src] and inserts [C].</span>", "<span class='notice'>You open the panel on [src] and insert [C].</span>")
-		power_change()
+		user.visible_message("\blue [user] opens the panel on [src] and inserts [C].", "\blue You open the panel on [src] and insert [C].")
 		return
 
 	if(istype(I, /obj/item/weapon/screwdriver))
 		if(!cell)
-			user << "<span class='warning'>There is no power cell installed.</span>"
+			user << "\red There is no power cell installed."
 			return
 
-		user.visible_message("<span class='notice'>[user] opens the panel on [src] and removes [cell].</span>", "<span class='notice'>You open the panel on [src] and remove [cell].</span>")
+		user.visible_message("\blue [user] opens the panel on [src] and removes [cell].", "\blue You open the panel on [src] and remove [cell].")
 		cell.add_fingerprint(user)
 		cell.loc = src.loc
 		cell = null
-		power_change()
 		return
+
 	..()
 
 /obj/machinery/portable_atmospherics/proc/log_open()

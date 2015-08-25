@@ -1,11 +1,9 @@
 /obj/machinery/computer/supplycomp
 	name = "supply control console"
 	icon = 'icons/obj/computer.dmi'
-	icon_keyboard = "tech_key"
-	icon_screen = "supply"
-	light_color = "#b88b2e"
+	icon_state = "supply"
 	req_access = list(access_cargo)
-	circuit = /obj/item/weapon/circuitboard/supplycomp
+	circuit = "/obj/item/weapon/circuitboard/supplycomp"
 	var/temp = null
 	var/reqtime = 0 //Cooldown for requisitions - Quarxink
 	var/hacked = 0
@@ -15,8 +13,8 @@
 /obj/machinery/computer/ordercomp
 	name = "supply ordering console"
 	icon = 'icons/obj/computer.dmi'
-	icon_screen = "request"
-	circuit = /obj/item/weapon/circuitboard/ordercomp
+	icon_state = "request"
+	circuit = "/obj/item/weapon/circuitboard/ordercomp"
 	var/temp = null
 	var/reqtime = 0 //Cooldown for requisitions - Quarxink
 	var/last_viewed_group = "categories"
@@ -87,7 +85,7 @@
 		if(!istype(P))	return
 
 		var/timeout = world.time + 600
-		var/reason = sanitize(input(usr,"Reason:","Why do you require this item?","") as null|text)
+		var/reason = sanitize(copytext(input(usr,"Reason:","Why do you require this item?","") as null|text,1,MAX_MESSAGE_LEN))
 		if(world.time > timeout)	return
 		if(!reason)	return
 
@@ -151,7 +149,7 @@
 
 /obj/machinery/computer/supplycomp/attack_hand(var/mob/user as mob)
 	if(!allowed(user))
-		user << "<span class='warning'>Access Denied.</span>"
+		user << "\red Access Denied."
 		return
 
 	if(..())
@@ -208,11 +206,14 @@
 	onclose(user, "computer")
 	return
 
-/obj/machinery/computer/supplycomp/emag_act(var/remaining_charges, var/mob/user)
-	if(!hacked)
-		user << "<span class='notice'>Special supplies unlocked.</span>"
+/obj/machinery/computer/supplycomp/attackby(I as obj, user as mob)
+	if(istype(I,/obj/item/weapon/card/emag) && !hacked)
+		user << "\blue Special supplies unlocked."
 		hacked = 1
-		return 1
+		return
+	else
+		..()
+	return
 
 /obj/machinery/computer/supplycomp/Topic(href, href_list)
 	if(!supply_controller)
@@ -288,7 +289,7 @@
 		if(!istype(P))	return
 
 		var/timeout = world.time + 600
-		var/reason = sanitize(input(usr,"Reason:","Why do you require this item?","") as null|text)
+		var/reason = sanitize(copytext(input(usr,"Reason:","Why do you require this item?","") as null|text,1,MAX_MESSAGE_LEN))
 		if(world.time > timeout)	return
 		if(!reason)	return
 

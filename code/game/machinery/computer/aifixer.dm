@@ -1,9 +1,7 @@
 /obj/machinery/computer/aifixer
 	name = "\improper AI system integrity restorer"
 	icon = 'icons/obj/computer.dmi'
-	icon_keyboard = "rd_key"
-	icon_screen = "ai-fixer"
-	light_color = "#a97faa"
+	icon_state = "ai-fixer"
 	circuit = /obj/item/weapon/circuitboard/aifixer
 	req_one_access = list(access_robotics, access_heads)
 	var/mob/living/silicon/ai/occupant = null
@@ -19,7 +17,7 @@
 
 	// Transfer over the AI.
 	transfer << "You have been uploaded to a stationary terminal. Sadly, there is no remote access from here."
-	user << "<span class='notice'>Transfer successful:</span> [transfer.name] ([rand(1000,9999)].exe) installed and executed successfully. Local copy has been removed."
+	user << "\blue <b>Transfer successful</b>: \black [transfer.name] ([rand(1000,9999)].exe) installed and executed successfully. Local copy has been removed."
 
 	transfer.loc = src
 	transfer.cancel_camera()
@@ -45,7 +43,7 @@
 
 		if(istype(comp_ai))
 			if(active)
-				user << "<span class='danger'>ERROR:</span> Reconstruction in progress."
+				user << "\red <b>ERROR</b>: \black Reconstruction in progress."
 				return
 			card.grab_ai(comp_ai, user)
 			if(!(locate(/mob/living/silicon/ai) in src)) occupant = null
@@ -70,10 +68,27 @@
 
 	if (src.occupant)
 		var/laws
-		dat += "Stored AI: [src.occupant.name]<br>System integrity: [src.occupant.hardware_integrity()]%<br>Backup Capacitor: [src.occupant.backup_capacitor()]%<br>"
+		dat += "Stored AI: [src.occupant.name]<br>System integrity: [src.occupant.system_integrity()]%<br>"
 
-		for (var/datum/ai_law/law in occupant.laws.all_laws())
-			laws += "[law.get_index()]: [law.law]<BR>"
+		for (var/law in occupant.laws.ion)
+			if(law)
+				laws += "[ionnum()]: [law]<BR>"
+
+		if (src.occupant.laws.zeroth)
+			laws += "0: [occupant.laws.zeroth]<BR>"
+
+		var/number = 1
+		for (var/index = 1, index <= occupant.laws.inherent.len, index++)
+			var/law = occupant.laws.inherent[index]
+			if (length(law) > 0)
+				laws += "[number]: [law]<BR>"
+				number++
+
+		for (var/index = 1, index <= occupant.laws.supplied.len, index++)
+			var/law = occupant.laws.supplied[index]
+			if (length(law) > 0)
+				laws += "[number]: [law]<BR>"
+				number++
 
 		dat += "Laws:<br>[laws]<br>"
 
@@ -129,13 +144,16 @@
 
 /obj/machinery/computer/aifixer/update_icon()
 	..()
+
+	overlays.Cut()
+
 	if((stat & BROKEN) || (stat & NOPOWER))
 		return
 
 	if(occupant)
 		if(occupant.stat)
-			overlays += image('icons/obj/computer.dmi', "ai-fixer-404", overlay_layer)
+			overlays += image('icons/obj/computer.dmi', "ai-fixer-404")
 		else
-			overlays += image('icons/obj/computer.dmi', "ai-fixer-full", overlay_layer)
+			overlays += image('icons/obj/computer.dmi', "ai-fixer-full")
 	else
-		overlays += image('icons/obj/computer.dmi', "ai-fixer-empty", overlay_layer)
+		overlays += image('icons/obj/computer.dmi', "ai-fixer-empty")

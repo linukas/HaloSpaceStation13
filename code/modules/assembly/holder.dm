@@ -3,7 +3,7 @@
 	icon = 'icons/obj/assemblies/new_assemblies.dmi'
 	icon_state = "holder"
 	item_state = "assembly"
-	flags = CONDUCT | PROXMOVE
+	flags = CONDUCT
 	throwforce = 5
 	w_class = 2.0
 	throw_speed = 3
@@ -190,7 +190,7 @@
 				a_right:holder = null
 				a_right.loc = T
 			spawn(0)
-				qdel(src)
+				del(src)
 		return
 
 

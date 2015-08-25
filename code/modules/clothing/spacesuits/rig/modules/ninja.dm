@@ -10,7 +10,7 @@
 
 	name = "active camouflage module"
 	desc = "A robust hardsuit-integrated stealth module."
-	icon_state = "cloak"
+	icon_state = "stealth"
 
 	toggleable = 1
 	disruptable = 1
@@ -66,7 +66,6 @@
 
 	name = "teleportation module"
 	desc = "A complex, sleek-looking, hardsuit-integrated teleportation module."
-	icon_state = "teleporter"
 	use_power_cost = 40
 	redundant = 1
 	usable = 1
@@ -95,15 +94,11 @@
 	playsound(T, "sparks", 50, 1)
 	anim(T,M,'icons/mob/mob.dmi',,"phaseout",,M.dir)
 
-/obj/item/rig_module/teleporter/engage(var/atom/target, var/notify_ai)
+/obj/item/rig_module/teleporter/engage(atom/target)
 
 	if(!..()) return 0
 
 	var/mob/living/carbon/human/H = holder.wearer
-
-	if(!istype(H.loc, /turf))
-		H << "<span class='warning'>You cannot teleport out of your current location.</span>"
-		return 0
 
 	var/turf/T
 	if(target)
@@ -114,13 +109,6 @@
 	if(!T || T.density)
 		H << "<span class='warning'>You cannot teleport into solid walls.</span>"
 		return 0
-
-	if(T.z in config.admin_levels)
-		H << "<span class='warning'>You cannot use your teleporter on this Z-level.</span>"
-		return 0
-
-	if(T.contains_dense_objects())
-		H << "<span class='warning'>You cannot teleport to a location with solid objects.</span>"
 
 	phase_out(H,get_turf(H))
 	H.loc = T
@@ -138,7 +126,6 @@
 
 	name = "net projector"
 	desc = "Some kind of complex energy projector with a hardsuit mount."
-	icon_state = "enet"
 
 	interface_name = "energy net launcher"
 	interface_desc = "An advanced energy-patterning projector used to capture targets."
@@ -160,7 +147,6 @@
 
 	name = "self-destruct module"
 	desc = "Oh my God, Captain. A bomb."
-	icon_state = "deadman"
 	usable = 1
 	active = 1
 	permanent = 1
@@ -190,12 +176,12 @@
 	explosion(get_turf(src), 1, 2, 4, 5)
 	if(holder && holder.wearer)
 		holder.wearer.drop_from_inventory(src)
-		qdel(holder)
-	qdel(src)
+		del(holder)
+	del(src)
 
 /obj/item/rig_module/self_destruct/small/engage()
 	explosion(get_turf(src), 0, 0, 3, 4)
 	if(holder && holder.wearer)
 		holder.wearer.drop_from_inventory(src)
-		qdel(holder)
-	qdel(src)
+		del(holder)
+	del(src)

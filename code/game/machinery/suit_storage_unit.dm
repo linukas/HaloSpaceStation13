@@ -76,12 +76,12 @@
 		if(1.0)
 			if(prob(50))
 				src.dump_everything() //So suits dont survive all the time
-			qdel(src)
+			del(src)
 			return
 		if(2.0)
 			if(prob(50))
 				src.dump_everything()
-				qdel(src)
+				del(src)
 			return
 		else
 			return
@@ -100,7 +100,7 @@
 		dat+= "<HEAD><TITLE>Suit storage unit: Maintenance panel</TITLE></HEAD>"
 		dat+= "<Font color ='black'><B>Maintenance panel controls</B></font><HR>"
 		dat+= "<font color ='grey'>The panel is ridden with controls, button and meters, labeled in strange signs and symbols that <BR>you cannot understand. Probably the manufactoring world's language.<BR> Among other things, a few controls catch your eye.<BR><BR>"
-		dat+= text("<font color ='black'>A small dial with a small lambda symbol on it. It's pointing towards a gauge that reads []</font>.<BR> <font color='blue'><A href='?src=\ref[];toggleUV=1'> Turn towards []</A><BR>",(src.issuperUV ? "15nm" : "185nm"),src,(src.issuperUV ? "185nm" : "15nm") )
+		dat+= text("<font color ='black'>A small dial with a \"ë\" symbol embroidded on it. It's pointing towards a gauge that reads []</font>.<BR> <font color='blue'><A href='?src=\ref[];toggleUV=1'> Turn towards []</A><BR>",(src.issuperUV ? "15nm" : "185nm"),src,(src.issuperUV ? "185nm" : "15nm") )
 		dat+= text("<font color ='black'>A thick old-style button, with 2 grimy LED lights next to it. The [] LED is on.</font><BR><font color ='blue'><A href='?src=\ref[];togglesafeties=1'>Press button</a></font>",(src.safetieson? "<font color='green'><B>GREEN</B></font>" : "<font color='red'><B>RED</B></font>"),src)
 		dat+= text("<HR><BR><A href='?src=\ref[];mach_close=suit_storage_unit'>Close panel</A>", user)
 		//user << browse(dat, "window=ssu_m_panel;size=400x500")
@@ -331,7 +331,7 @@
 		sleep(50)
 		if(src.OCCUPANT)
 			OCCUPANT.radiation += 50
-			var/obj/item/organ/diona/nutrients/rad_organ = locate() in OCCUPANT.internal_organs
+			var/datum/organ/internal/diona/nutrients/rad_organ = locate() in OCCUPANT.internal_organs
 			if (!rad_organ)
 				if(src.issuperUV)
 					var/burndamage = rand(28,35)
@@ -465,7 +465,7 @@
 		src.update_icon()
 
 //		for(var/obj/O in src)
-//			qdel(O)
+//			del(O)
 
 		src.add_fingerprint(usr)
 		src.updateUsrDialog()
@@ -511,7 +511,7 @@
 			//for(var/obj/O in src)
 			//	O.loc = src.loc
 			src.add_fingerprint(user)
-			qdel(G)
+			del(G)
 			src.updateUsrDialog()
 			src.update_icon()
 			return
@@ -612,10 +612,10 @@
 	wires = new(src)
 	target_department = departments[1]
 	target_species = species[1]
-	if(!target_department || !target_species) qdel(src)
+	if(!target_department || !target_species) del(src)
 
-/obj/machinery/suit_cycler/Destroy()
-	qdel(wires)
+/obj/machinery/suit_cycler/Del()
+	del(wires) // qdel
 	wires = null
 	..()
 
@@ -684,7 +684,7 @@
 			user << "<span class='danger'>There is no room inside the cycler for [G.affecting.name].</span>"
 			return
 
-		visible_message("<span class='notice'>[user] starts putting [G.affecting.name] into the suit cycler.</span>", 3)
+		visible_message("[user] starts putting [G.affecting.name] into the suit cycler.</span>", 3)
 
 		if(do_after(user, 20))
 			if(!G || !G.affecting) return
@@ -696,7 +696,7 @@
 			src.occupant = M
 
 			src.add_fingerprint(user)
-			qdel(G)
+			del(G)
 
 			src.updateUsrDialog()
 
@@ -708,6 +708,24 @@
 		src.updateUsrDialog()
 		return
 
+	else if(istype(I,/obj/item/weapon/card/emag))
+
+		if(emagged)
+			user << "<span class='danger'>The cycler has already been subverted.</span>"
+			return
+
+		var/obj/item/weapon/card/emag/E = I
+		src.updateUsrDialog()
+		E.uses--
+
+		//Clear the access reqs, disable the safeties, and open up all paintjobs.
+		user << "<span class='danger'>You run the sequencer across the interface, corrupting the operating protocols.</span>"
+		departments = list("Engineering","Mining","Medical","Security","Atmos","^%###^%$")
+		emagged = 1
+		safeties = 0
+		req_access = list()
+		return
+
 	else if(istype(I,/obj/item/clothing/head/helmet/space) && !istype(I, /obj/item/clothing/head/helmet/space/rig))
 
 		if(locked)
@@ -716,10 +734,6 @@
 
 		if(helmet)
 			user << "<span class='danger'>The cycler already contains a helmet.</span>"
-			return
-
-		if(I.icon_override == CUSTOM_ITEM_MOB)
-			user << "You cannot refit a customised voidsuit."
 			return
 
 		user << "You fit \the [I] into the suit cycler."
@@ -741,10 +755,6 @@
 			user << "<span class='danger'>The cycler already contains a voidsuit.</span>"
 			return
 
-		if(I.icon_override == CUSTOM_ITEM_MOB)
-			user << "You cannot refit a customised voidsuit."
-			return
-
 		user << "You fit \the [I] into the suit cycler."
 		user.drop_item()
 		I.loc = src
@@ -755,20 +765,6 @@
 		return
 
 	..()
-	
-/obj/machinery/suit_cycler/emag_act(var/remaining_charges, var/mob/user)
-	if(emagged)
-		user << "<span class='danger'>The cycler has already been subverted.</span>"
-		return
-
-	//Clear the access reqs, disable the safeties, and open up all paintjobs.
-	user << "<span class='danger'>You run the sequencer across the interface, corrupting the operating protocols.</span>"
-	departments = list("Engineering","Mining","Medical","Security","Atmos","^%###^%$")
-	emagged = 1
-	safeties = 0
-	req_access = list()
-	src.updateUsrDialog()
-	return 1
 
 /obj/machinery/suit_cycler/attack_hand(mob/user as mob)
 
@@ -929,7 +925,7 @@
 
 /obj/machinery/suit_cycler/proc/finished_job()
 	var/turf/T = get_turf(src)
-	T.visible_message("\icon[src]<span class='notice'>The [src] pings loudly.</span>")
+	T.visible_message("\icon[src] \blue The [src] pings loudly.")
 	icon_state = initial(icon_state)
 	active = 0
 	src.updateUsrDialog()
@@ -956,7 +952,7 @@
 /obj/machinery/suit_cycler/proc/eject_occupant(mob/user as mob)
 
 	if(locked || active)
-		user << "<span class='warning'>The cycler is locked.</span>"
+		user << "\red The cycler is locked."
 		return
 
 	if (!occupant)
@@ -991,6 +987,7 @@
 				helmet.name = "engineering voidsuit helmet"
 				helmet.icon_state = "rig0-engineering"
 				helmet.item_state = "eng_helm"
+				helmet.item_color = "engineering"
 			if(suit)
 				suit.name = "engineering voidsuit"
 				suit.icon_state = "rig-engineering"
@@ -1000,6 +997,7 @@
 				helmet.name = "mining voidsuit helmet"
 				helmet.icon_state = "rig0-mining"
 				helmet.item_state = "mining_helm"
+				helmet.item_color = "mining"
 			if(suit)
 				suit.name = "mining voidsuit"
 				suit.icon_state = "rig-mining"
@@ -1009,6 +1007,7 @@
 				helmet.name = "medical voidsuit helmet"
 				helmet.icon_state = "rig0-medical"
 				helmet.item_state = "medical_helm"
+				helmet.item_color = "medical"
 			if(suit)
 				suit.name = "medical voidsuit"
 				suit.icon_state = "rig-medical"
@@ -1018,6 +1017,7 @@
 				helmet.name = "security voidsuit helmet"
 				helmet.icon_state = "rig0-sec"
 				helmet.item_state = "sec_helm"
+				helmet.item_color = "sec"
 			if(suit)
 				suit.name = "security voidsuit"
 				suit.icon_state = "rig-sec"
@@ -1027,6 +1027,7 @@
 				helmet.name = "atmospherics voidsuit helmet"
 				helmet.icon_state = "rig0-atmos"
 				helmet.item_state = "atmos_helm"
+				helmet.item_color = "atmos"
 			if(suit)
 				suit.name = "atmospherics voidsuit"
 				suit.icon_state = "rig-atmos"
@@ -1036,6 +1037,7 @@
 				helmet.name = "blood-red voidsuit helmet"
 				helmet.icon_state = "rig0-syndie"
 				helmet.item_state = "syndie_helm"
+				helmet.item_color = "syndie"
 			if(suit)
 				suit.name = "blood-red voidsuit"
 				suit.item_state = "syndie_voidsuit"

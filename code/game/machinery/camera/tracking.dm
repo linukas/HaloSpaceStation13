@@ -15,6 +15,7 @@
 	cameranet.process_sort()
 
 	var/list/T = list()
+	T["Cancel"] = "Cancel"
 	for (var/obj/machinery/camera/C in cameranet.cameras)
 		var/list/tempnetwork = C.network&src.network
 		if (tempnetwork.len)
@@ -29,10 +30,11 @@
 	set category = "AI Commands"
 	set name = "Show Camera List"
 
-	if(check_unable())
+	if(src.stat == 2)
+		src << "You can't list the cameras because you are dead!"
 		return
 
-	if (!camera)
+	if (!camera || camera == "Cancel")
 		return 0
 
 	var/obj/machinery/camera/C = track.cameras[camera]
@@ -45,22 +47,22 @@
 	set name = "Store Camera Location"
 	set desc = "Stores your current camera location by the given name"
 
-	loc = sanitize(loc)
+	loc = sanitize(copytext(loc, 1, MAX_MESSAGE_LEN))
 	if(!loc)
-		src << "<span class='warning'>Must supply a location name</span>"
+		src << "\red Must supply a location name"
 		return
 
 	if(stored_locations.len >= max_locations)
-		src << "<span class='warning'>Cannot store additional locations. Remove one first</span>"
+		src << "\red Cannot store additional locations. Remove one first"
 		return
 
 	if(loc in stored_locations)
-		src << "<span class='warning'>There is already a stored location by this name</span>"
+		src << "\red There is already a stored location by this name"
 		return
 
 	var/L = src.eyeobj.getLoc()
 	if (InvalidPlayerTurf(get_turf(L)))
-		src << "<span class='warning'>Unable to store this location</span>"
+		src << "\red Unable to store this location"
 		return
 
 	stored_locations[loc] = L
@@ -75,7 +77,7 @@
 	set desc = "Returns to the selected camera location"
 
 	if (!(loc in stored_locations))
-		src << "<span class='warning'>Location [loc] not found</span>"
+		src << "\red Location [loc] not found"
 		return
 
 	var/L = stored_locations[loc]
@@ -87,7 +89,7 @@
 	set desc = "Deletes the selected camera location"
 
 	if (!(loc in stored_locations))
-		src << "<span class='warning'>Location [loc] not found</span>"
+		src << "\red Location [loc] not found"
 		return
 
 	stored_locations.Remove(loc)
@@ -155,11 +157,6 @@
 	if(!istype(target))	return
 	var/mob/living/silicon/ai/U = usr
 
-	if(target == U.cameraFollow)
-		return
-
-	if(U.cameraFollow)
-		U.ai_cancel_tracking()
 	U.cameraFollow = target
 	U << "Now tracking [target.name] on camera."
 	target.tracking_initiated()
@@ -216,16 +213,13 @@
 mob/living/proc/near_camera()
 	if (!isturf(loc))
 		return 0
-	else if(!cameranet.checkVis(src))
+	else if(!cameranet.checkCameraVis(src))
 		return 0
 	return 1
 
 /mob/living/proc/tracking_status()
 	// Easy checks first.
 	// Don't detect mobs on Centcom. Since the wizard den is on Centcomm, we only need this.
-	var/obj/item/weapon/card/id/id = GetIdCard()
-	if(id && id.prevent_tracking())
-		return TRACKING_TERMINATE
 	if(InvalidPlayerTurf(get_turf(src)))
 		return TRACKING_TERMINATE
 	if(invisibility >= INVISIBILITY_LEVEL_ONE) //cloaked
@@ -243,8 +237,13 @@ mob/living/proc/near_camera()
 	if(. == TRACKING_NO_COVERAGE)
 		return camera && camera.can_use() ? TRACKING_POSSIBLE : TRACKING_NO_COVERAGE
 
+/mob/living/silicon/robot/syndicate/tracking_status()
+	return TRACKING_TERMINATE
+
 /mob/living/carbon/human/tracking_status()
 	//Cameras can't track people wearing an agent card or a ninja hood.
+	if(wear_id && istype(wear_id.GetID(), /obj/item/weapon/card/id/syndicate))
+		return TRACKING_TERMINATE
 	if(istype(head, /obj/item/clothing/head/helmet/space/rig))
 		var/obj/item/clothing/head/helmet/space/rig/helmet = head
 		if(helmet.prevent_track())

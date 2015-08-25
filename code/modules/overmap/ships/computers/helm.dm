@@ -1,7 +1,6 @@
 /obj/machinery/computer/helm
 	name = "helm control console"
-	icon_keyboard = "med_key"
-	icon_screen = "id"
+	icon_state = "id"
 	var/state = "status"
 	var/obj/effect/map/ship/linked			//connected overmap object
 	var/autopilot = 0
@@ -54,10 +53,11 @@
 
 /obj/machinery/computer/helm/check_eye(var/mob/user as mob)
 	if (!manual_control)
-		return -1
+		return null
 	if (!get_dist(user, src) > 1 || user.blinded || !linked )
-		return -1
-	return 0
+		return null
+	user.reset_view(linked)
+	return 1
 
 /obj/machinery/computer/helm/attack_hand(var/mob/user as mob)
 	if(..())
@@ -67,8 +67,6 @@
 
 	if(!isAI(user))
 		user.set_machine(src)
-		if(linked)
-			user.reset_view(linked)
 
 	ui_interact(user)
 

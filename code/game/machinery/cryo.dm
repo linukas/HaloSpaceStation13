@@ -2,8 +2,8 @@
 
 /obj/machinery/atmospherics/unary/cryo_cell
 	name = "cryo cell"
-	icon = 'icons/obj/cryogenics.dmi' // map only
-	icon_state = "pod_preview"
+	icon = 'icons/obj/cryogenics.dmi'
+	icon_state = "cell-off"
 	density = 1
 	anchored = 1.0
 	layer = 2.8
@@ -22,15 +22,11 @@
 
 /obj/machinery/atmospherics/unary/cryo_cell/New()
 	..()
-	icon = 'icons/obj/cryogenics_split.dmi'
-	update_icon()
 	initialize_directions = dir
 
-/obj/machinery/atmospherics/unary/cryo_cell/Destroy()
-	var/turf/T = loc
-	T.contents += contents
-	if(beaker)
-		beaker.loc = get_step(loc, SOUTH) //Beaker is carefully ejected from the wreckage of the cryotube
+/obj/machinery/atmospherics/unary/cryo_cell/Del()
+	if(occupant)
+		occupant.loc = loc
 	..()
 
 /obj/machinery/atmospherics/unary/cryo_cell/initialize()
@@ -173,7 +169,7 @@
 /obj/machinery/atmospherics/unary/cryo_cell/attackby(var/obj/item/weapon/G as obj, var/mob/user as mob)
 	if(istype(G, /obj/item/weapon/reagent_containers/glass))
 		if(beaker)
-			user << "<span class='warning'>A beaker is already loaded into the machine.</span>"
+			user << "\red A beaker is already loaded into the machine."
 			return
 
 		beaker =  G
@@ -189,34 +185,17 @@
 				return
 		var/mob/M = G:affecting
 		if(put_mob(M))
-			qdel(G)
+			del(G)
 	return
 
 /obj/machinery/atmospherics/unary/cryo_cell/update_icon()
-	overlays.Cut()
-	icon_state = "pod[on]"
-	var/image/I
-
-	I = image(icon, "pod[on]_top")
-	I.layer = 5 // this needs to be fairly high so it displays over most things, but it needs to be under lighting (at 10)
-	I.pixel_z = 32
-	overlays += I
-
-	if(occupant)
-		var/image/pickle = image(occupant.icon, occupant.icon_state)
-		pickle.overlays = occupant.overlays
-		pickle.pixel_z = 18
-		pickle.layer = 5
-		overlays += pickle
-
-	I = image(icon, "lid[on]")
-	I.layer = 5
-	overlays += I
-
-	I = image(icon, "lid[on]_top")
-	I.layer = 5
-	I.pixel_z = 32
-	overlays += I
+	if(on)
+		if(occupant)
+			icon_state = "cell-occupied"
+			return
+		icon_state = "cell-on"
+		return
+	icon_state = "cell-off"
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/process_occupant()
 	if(air_contents.total_moles < 10)
@@ -245,7 +224,8 @@
 		var/has_clonexa = occupant.reagents.get_reagent_amount("clonexadone") >= 1
 		var/has_cryo_medicine = has_cryo || has_clonexa
 		if(beaker && !has_cryo_medicine)
-			beaker.reagents.trans_to_mob(occupant, 1, CHEM_BLOOD, 10)
+			beaker.reagents.trans_to(occupant, 1, 10)
+			beaker.reagents.reaction(occupant)
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/heat_gas_contents()
 	if(air_contents.total_moles < 1)
@@ -286,19 +266,19 @@
 	return
 /obj/machinery/atmospherics/unary/cryo_cell/proc/put_mob(mob/living/carbon/M as mob)
 	if (stat & (NOPOWER|BROKEN))
-		usr << "<span class='warning'>The cryo cell is not functioning.</span>"
+		usr << "\red The cryo cell is not functioning."
 		return
 	if (!istype(M))
-		usr << "<span class='danger'>The cryo cell cannot handle such a lifeform!</span>"
+		usr << "\red <B>The cryo cell cannot handle such a lifeform!</B>"
 		return
 	if (occupant)
-		usr << "<span class='danger'>The cryo cell is already occupied!</span>"
+		usr << "\red <B>The cryo cell is already occupied!</B>"
 		return
 	if (M.abiotic())
-		usr << "<span class='warning'>Subject may not have abiotic items on.</span>"
+		usr << "\red Subject may not have abiotic items on."
 		return
 	if(!node)
-		usr << "<span class='warning'>The cell is not correctly connected to its pipe network!</span>"
+		usr << "\red The cell is not correctly connected to its pipe network!"
 		return
 	if (M.client)
 		M.client.perspective = EYE_PERSPECTIVE
@@ -307,7 +287,7 @@
 	M.loc = src
 	M.ExtinguishMob()
 	if(M.health > -100 && (M.health < 0 || M.sleeping))
-		M << "<span class='notice'><b>You feel a cold liquid surround you. Your skin starts to freeze up.</b></span>"
+		M << "\blue <b>You feel a cold liquid surround you. Your skin starts to freeze up.</b>"
 	occupant = M
 	current_heat_capacity = HEAT_CAPACITY_HUMAN
 	update_use_power(2)
@@ -323,7 +303,7 @@
 	if(usr == occupant)//If the user is inside the tube...
 		if (usr.stat == 2)//and he's not dead....
 			return
-		usr << "<span class='notice'>Release sequence activated. This will take two minutes.</span>"
+		usr << "\blue Release sequence activated. This will take two minutes."
 		sleep(1200)
 		if(!src || !usr || !occupant || (occupant != usr)) //Check if someone's released/replaced/bombed him already
 			return
@@ -348,16 +328,7 @@
 	put_mob(usr)
 	return
 
-/atom/proc/return_air_for_internal_lifeform()
-	return return_air()
 
-/obj/machinery/atmospherics/unary/cryo_cell/return_air_for_internal_lifeform()
-	//assume that the cryo cell has some kind of breath mask or something that
-	//draws from the cryo tube's environment, instead of the cold internal air.
-	if(loc)
-		return loc.return_air()
-	else
-		return null
 
 /datum/data/function/proc/reset()
 	return

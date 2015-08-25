@@ -14,8 +14,8 @@ var/const/MAX_ACTIVE_TIME = 400
 	icon = 'icons/mob/alien.dmi'
 	icon_state = "facehugger"
 	item_state = "facehugger"
-	w_class = 3 //note: can be picked up by aliens unlike most other items of w_class below 4
-	flags = PROXMOVE
+	w_class = 1 //note: can be picked up by aliens unlike most other items of w_class below 4
+	flags = MASKCOVERSMOUTH | MASKCOVERSEYES | AIRTIGHT
 	body_parts_covered = FACE|EYES
 	throw_range = 5
 
@@ -41,7 +41,7 @@ var/const/MAX_ACTIVE_TIME = 400
 	if(config.aliens_allowed)
 		..()
 	else
-		qdel(src)
+		del(src)
 
 /obj/item/clothing/mask/facehugger/examine(mob/user)
 	..(user)
@@ -54,10 +54,8 @@ var/const/MAX_ACTIVE_TIME = 400
 		user << "\red \b It looks like the proboscis has been removed."
 	return
 
-/obj/item/clothing/mask/facehugger/attackby(obj/item/I, mob/user)
-	if(I.force)
-		user.do_attack_animation(src)
-		Die()
+/obj/item/clothing/mask/facehugger/attackby()
+	Die()
 	return
 
 /obj/item/clothing/mask/facehugger/bullet_act()
@@ -65,7 +63,7 @@ var/const/MAX_ACTIVE_TIME = 400
 	return
 
 /obj/item/clothing/mask/facehugger/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
-	if(exposed_temperature > T0C+80)
+	if(exposed_temperature > 300)
 		Die()
 	return
 
@@ -110,7 +108,7 @@ var/const/MAX_ACTIVE_TIME = 400
 		return
 
 	var/mob/living/carbon/C = M
-	if(istype(C) && locate(/obj/item/organ/xenos/hivenode) in C.internal_organs)
+	if(istype(C) && locate(/datum/organ/internal/xenos/hivenode) in C.internal_organs)
 		return
 
 
@@ -125,6 +123,15 @@ var/const/MAX_ACTIVE_TIME = 400
 	if(!sterile) L.take_organ_damage(strength,0) //done here so that even borgs and humans in helmets take damage
 
 	L.visible_message("\red \b [src] leaps at [L]'s face!")
+
+	/* Tentatively removed since huggers can't be thrown anymore
+	if(ishuman(L))
+		var/mob/living/carbon/human/H = L
+		if(H.head && H.head.flags & HEADCOVERSMOUTH)
+			H.visible_message("\red \b [src] smashes against [H]'s [H.head]!")
+			Die()
+			return
+	*/
 
 	if(iscarbon(M))
 		var/mob/living/carbon/target = L
@@ -221,11 +228,11 @@ var/const/MAX_ACTIVE_TIME = 400
 		return 0
 
 	var/mob/living/carbon/C = M
-	if(istype(C) && locate(/obj/item/organ/xenos/hivenode) in C.internal_organs)
+	if(istype(C) && locate(/datum/organ/internal/xenos/hivenode) in C.internal_organs)
 		return 0
 
 	if(ishuman(C))
 		var/mob/living/carbon/human/H = C
-		if(H.head && (H.head.body_parts_covered & FACE) && !(H.head.item_flags & FLEXIBLEMATERIAL))
+		if(H.head && H.head.flags & HEADCOVERSMOUTH)
 			return 0
 	return 1

@@ -17,7 +17,7 @@
 /obj/structure/curtain/bullet_act(obj/item/projectile/P, def_zone)
 	if(!P.nodamage)
 		visible_message("<span class='warning'>[P] tears [src] down!</span>")
-		qdel(src)
+		del(src)
 	else
 		..(P, def_zone)
 
@@ -43,14 +43,6 @@
 	name = "plastic curtain"
 	color = "#B8F5E3"
 	alpha = 200
-
-/obj/structure/curtain/open/bed
-	name = "bed curtain"
-	color = "#854636"
-
-/obj/structure/curtain/open/privacy
-	name = "privacy curtain"
-	color = "#B8F5E3"
 
 /obj/structure/curtain/open/shower
 	name = "shower curtain"

@@ -13,7 +13,7 @@
 	var/state = 2
 	var/reinf = 0
 	var/basestate
-	var/shardtype = /obj/item/weapon/material/shard
+	var/shardtype = /obj/item/weapon/shard
 	var/glasstype = null // Set this in subtypes. Null is assumed strange or otherwise impossible to dismantle, such as for shuttle glass.
 	var/silicate = 0 // number of units of silicate
 
@@ -87,13 +87,13 @@
 		var/index = null
 		index = 0
 		while(index < 2)
-			new shardtype(loc) //todo pooling?
-			if(reinf) PoolOrNew(/obj/item/stack/rods, loc)
+			new shardtype(loc)
+			if(reinf) new /obj/item/stack/rods(loc)
 			index++
 	else
-		new shardtype(loc) //todo pooling?
-		if(reinf) PoolOrNew(/obj/item/stack/rods, loc)
-	qdel(src)
+		new shardtype(loc)
+		if(reinf) new /obj/item/stack/rods(loc)
+	del(src)
 	return
 
 
@@ -111,7 +111,7 @@
 /obj/structure/window/ex_act(severity)
 	switch(severity)
 		if(1.0)
-			qdel(src)
+			del(src)
 			return
 		if(2.0)
 			shatter(0)
@@ -123,6 +123,10 @@
 
 
 /obj/structure/window/blob_act()
+	shatter()
+
+
+/obj/structure/window/meteorhit()
 	shatter()
 
 //TODO: Make full windows a separate type of window.
@@ -171,14 +175,12 @@
 	playsound(loc, 'sound/effects/Glasshit.ogg', 50, 1)
 
 /obj/structure/window/attack_hand(mob/user as mob)
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(HULK in user.mutations)
 		user.say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!"))
 		user.visible_message("<span class='danger'>[user] smashes through [src]!</span>")
-		user.do_attack_animation(src)
 		shatter()
 
-	else if (usr.a_intent == I_HURT)
+	else if (usr.a_intent == "hurt")
 
 		if (istype(usr,/mob/living/carbon/human))
 			var/mob/living/carbon/human/H = usr
@@ -187,19 +189,17 @@
 				return
 
 		playsound(src.loc, 'sound/effects/glassknock.ogg', 80, 1)
-		user.do_attack_animation(src)
-		usr.visible_message("<span class='danger'>[usr.name] bangs against the [src.name]!</span>",
-							"<<span class='danger'>You bang against the [src.name]!</span>",
+		usr.visible_message("\red [usr.name] bangs against the [src.name]!", \
+							"\red You bang against the [src.name]!", \
 							"You hear a banging sound.")
 	else
 		playsound(src.loc, 'sound/effects/glassknock.ogg', 80, 1)
-		usr.visible_message("[usr.name] knocks on the [src.name].",
-							"You knock on the [src.name].",
+		usr.visible_message("[usr.name] knocks on the [src.name].", \
+							"You knock on the [src.name].", \
 							"You hear a knocking sound.")
 	return
 
 /obj/structure/window/attack_generic(var/mob/user, var/damage)
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(!damage)
 		return
 	if(damage >= 10)
@@ -207,7 +207,6 @@
 		take_damage(damage)
 	else
 		visible_message("<span class='notice'>\The [user] bonks \the [src] harmlessly.</span>")
-	user.do_attack_animation(src)
 	return 1
 
 /obj/structure/window/attackby(obj/item/W as obj, mob/user as mob)
@@ -217,7 +216,7 @@
 		if(istype(G.affecting,/mob/living))
 			var/mob/living/M = G.affecting
 			var/state = G.state
-			qdel(W)	//gotta delete it here because if window breaks, it won't get deleted
+			del(W)	//gotta delete it here because if window breaks, it won't get deleted
 			switch (state)
 				if(1)
 					M.visible_message("<span class='warning'>[user] slams [M] against \the [src]!</span>")
@@ -241,7 +240,6 @@
 	if(istype(W, /obj/item/weapon/screwdriver))
 		if(reinf && state >= 1)
 			state = 3 - state
-			update_nearby_icons()
 			playsound(loc, 'sound/items/Screwdriver.ogg', 75, 1)
 			user << (state == 1 ? "<span class='notice'>You have unfastened the window from the frame.</span>" : "<span class='notice'>You have fastened the window to the frame.</span>")
 		else if(reinf && state == 0)
@@ -264,15 +262,13 @@
 		else
 			visible_message("<span class='notice'>[user] dismantles \the [src].</span>")
 			if(dir == SOUTHWEST)
-				var/obj/item/stack/material/mats = new glasstype(loc)
+				var/obj/item/stack/sheet/mats = new glasstype(loc)
 				mats.amount = is_fulltile() ? 4 : 2
 			else
 				new glasstype(loc)
-			qdel(src)
+			del(src)
 	else
-		user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 		if(W.damtype == BRUTE || W.damtype == BURN)
-			user.do_attack_animation(src)
 			hit(W.force)
 			if(health <= 7)
 				anchored = 0
@@ -294,9 +290,6 @@
 	set category = "Object"
 	set src in oview(1)
 
-	if(usr.incapacitated())
-		return 0
-	
 	if(anchored)
 		usr << "It is fastened to the floor therefore you can't rotate it!"
 		return 0
@@ -312,9 +305,6 @@
 	set name = "Rotate Window Clockwise"
 	set category = "Object"
 	set src in oview(1)
-
-	if(usr.incapacitated())
-		return 0
 
 	if(anchored)
 		usr << "It is fastened to the floor therefore you can't rotate it!"
@@ -344,14 +334,10 @@
 	update_nearby_icons()
 
 
-/obj/structure/window/Destroy()
+/obj/structure/window/Del()
 	density = 0
 	update_nearby_tiles()
-	var/turf/location = loc
-	loc = null
-	for(var/obj/structure/window/W in orange(location, 1))
-		W.update_icon()
-	loc = location
+	update_nearby_icons()
 	..()
 
 
@@ -371,31 +357,35 @@
 //This proc is used to update the icons of nearby windows. It should not be confused with update_nearby_tiles(), which is an atmos proc!
 /obj/structure/window/proc/update_nearby_icons()
 	update_icon()
-	for(var/obj/structure/window/W in orange(src, 1))
-		W.update_icon()
+	for(var/direction in cardinal)
+		for(var/obj/structure/window/W in get_step(src,direction) )
+			W.update_icon()
 
 //merges adjacent full-tile windows into one (blatant ripoff from game/smoothwall.dm)
 /obj/structure/window/update_icon()
 	//A little cludge here, since I don't know how it will work with slim windows. Most likely VERY wrong.
 	//this way it will only update full-tile ones
-	overlays.Cut()
-	if(!is_fulltile())
-		icon_state = "[basestate]"
+	//This spawn is here so windows get properly updated when one gets deleted.
+	spawn(2)
+		if(!src) return
+		if(!is_fulltile())
+			icon_state = "[basestate]"
+			return
+		var/junction = 0 //will be used to determine from which side the window is connected to other windows
+		if(anchored)
+			for(var/obj/structure/window/W in orange(src,1))
+				if(W.anchored && W.density	&& W.is_fulltile()) //Only counts anchored, not-destroyed fill-tile windows.
+					if(abs(x-W.x)-abs(y-W.y) ) 		//doesn't count windows, placed diagonally to src
+						junction |= get_dir(src,W)
+		if(opacity)
+			icon_state = "[basestate][junction]"
+		else
+			if(reinf)
+				icon_state = "[basestate][junction]"
+			else
+				icon_state = "[basestate][junction]"
+
 		return
-	var/list/dirs = list()
-	if(anchored)
-		for(var/obj/structure/window/W in orange(src,1))
-			if(W.anchored && W.density && W.type == src.type && W.is_fulltile()) //Only counts anchored, not-destroyed fill-tile windows.
-				dirs += get_dir(src, W)
-
-	var/list/connections = dirs_to_corner_states(dirs)
-
-	icon_state = ""
-	for(var/i = 1 to 4)
-		var/image/I = image(icon, "[basestate][connections[i]]", dir = 1<<(i-1))
-		overlays += I
-
-	return
 
 /obj/structure/window/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 	if(exposed_temperature > T0C + 800)
@@ -408,7 +398,7 @@
 	desc = "It looks thin and flimsy. A few knocks with... anything, really should shatter it."
 	icon_state = "window"
 	basestate = "window"
-	glasstype = /obj/item/stack/material/glass
+	glasstype = /obj/item/stack/sheet/glass
 
 
 /obj/structure/window/phoronbasic
@@ -416,8 +406,8 @@
 	desc = "A phoron-glass alloy window. It looks insanely tough to break. It appears it's also insanely tough to burn through."
 	basestate = "phoronwindow"
 	icon_state = "phoronwindow"
-	shardtype = /obj/item/weapon/material/shard/phoron
-	glasstype = /obj/item/stack/material/glass/phoronglass
+	shardtype = /obj/item/weapon/shard/phoron
+	glasstype = /obj/item/stack/sheet/glass/phoronglass
 	maxhealth = 120
 
 /obj/structure/window/phoronbasic/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
@@ -430,8 +420,8 @@
 	desc = "A phoron-glass alloy window, with rods supporting it. It looks hopelessly tough to break. It also looks completely fireproof, considering how basic phoron windows are insanely fireproof."
 	basestate = "phoronrwindow"
 	icon_state = "phoronrwindow"
-	shardtype = /obj/item/weapon/material/shard/phoron
-	glasstype = /obj/item/stack/material/glass/phoronrglass
+	shardtype = /obj/item/weapon/shard/phoron
+	glasstype = /obj/item/stack/sheet/glass/phoronrglass
 	reinf = 1
 	maxhealth = 160
 
@@ -445,7 +435,7 @@
 	basestate = "rwindow"
 	maxhealth = 40
 	reinf = 1
-	glasstype = /obj/item/stack/material/glass/reinforced
+	glasstype = /obj/item/stack/sheet/glass/reinforced
 
 /obj/structure/window/New(Loc, constructed=0)
 	..()
@@ -476,8 +466,10 @@
 	basestate = "window"
 	maxhealth = 40
 	reinf = 1
-	basestate = "w"
 	dir = 5
+
+	update_icon() //icon_state has to be set manually
+		return
 
 /obj/structure/window/reinforced/polarized
 	name = "electrochromic window"
@@ -487,10 +479,10 @@
 /obj/structure/window/reinforced/polarized/proc/toggle()
 	if(opacity)
 		animate(src, color="#FFFFFF", time=5)
-		set_opacity(0)
+		SetOpacity(0)
 	else
 		animate(src, color="#222222", time=5)
-		set_opacity(1)
+		SetOpacity(1)
 
 
 

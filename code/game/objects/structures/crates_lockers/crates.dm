@@ -105,18 +105,18 @@
 	switch(severity)
 		if(1.0)
 			for(var/obj/O in src.contents)
-				qdel(O)
-			qdel(src)
+				del(O)
+			del(src)
 			return
 		if(2.0)
 			for(var/obj/O in src.contents)
 				if(prob(50))
-					qdel(O)
-			qdel(src)
+					del(O)
+			del(src)
 			return
 		if(3.0)
 			if (prob(50))
-				qdel(src)
+				del(src)
 			return
 		else
 	return
@@ -192,15 +192,7 @@
 /obj/structure/closet/crate/secure/attackby(obj/item/weapon/W as obj, mob/user as mob)
 	if(is_type_in_list(W, list(/obj/item/weapon/packageWrap, /obj/item/stack/cable_coil, /obj/item/device/radio/electropack, /obj/item/weapon/wirecutters)))
 		return ..()
-	if(istype(W, /obj/item/weapon/melee/energy/blade))
-		emag_act(INFINITY, user)
-	if(!opened)
-		src.togglelock(user)
-		return
-	return ..()
-
-/obj/structure/closet/crate/secure/emag_act(var/remaining_charges, var/mob/user)
-	if(!broken)
+	if(locked && (istype(W, /obj/item/weapon/card/emag)||istype(W, /obj/item/weapon/melee/energy/blade)))
 		overlays.Cut()
 		overlays += emag
 		overlays += sparks
@@ -209,7 +201,11 @@
 		src.locked = 0
 		src.broken = 1
 		user << "<span class='notice'>You unlock \the [src].</span>"
-		return 1
+		return
+	if(!opened)
+		src.togglelock(user)
+		return
+	return ..()
 
 /obj/structure/closet/crate/secure/emp_act(severity)
 	for(var/obj/O in src)
@@ -231,7 +227,7 @@
 			open()
 		else
 			src.req_access = list()
-			src.req_access += pick(get_all_station_access())
+			src.req_access += pick(get_all_accesses())
 	..()
 
 /obj/structure/closet/crate/plastic
@@ -495,7 +491,7 @@
 		..()
 		new /obj/item/weapon/reagent_containers/spray/plantbgone(src)
 		new /obj/item/weapon/reagent_containers/spray/plantbgone(src)
-		new /obj/item/weapon/material/minihoe(src)
+		new /obj/item/weapon/minihoe(src)
 //		new /obj/item/weapon/weedspray(src)
 //		new /obj/item/weapon/weedspray(src)
 //		new /obj/item/weapon/pestspray(src)

@@ -3,9 +3,7 @@
 	desc = "Does not support pinball."
 	icon = 'icons/obj/computer.dmi'
 	icon_state = "arcade"
-	icon_keyboard = null
-	icon_screen = "invaders"
-	circuit = /obj/item/weapon/circuitboard/arcade
+	circuit = "/obj/item/weapon/circuitboard/arcade"
 	var/enemy_name = "Space Villian"
 	var/temp = "Winners Don't Use Spacedrugs" //Temporary message, for attack messages, etc
 	var/player_hp = 30 //Player health/attack points
@@ -223,8 +221,8 @@
 	return
 
 
-/obj/machinery/computer/arcade/emag_act(var/charges, var/mob/user)
-	if(!emagged)
+/obj/machinery/computer/arcade/attackby(I as obj, user as mob)
+	if(istype(I, /obj/item/weapon/card/emag) && !emagged)
 		temp = "If you die in the game, you die for real!"
 		player_hp = 30
 		player_mp = 10
@@ -232,13 +230,17 @@
 		enemy_mp = 20
 		gameover = 0
 		blocked = 0
+
 		emagged = 1
 
 		enemy_name = "Cuban Pete"
 		name = "Outbomb Cuban Pete"
 
+
 		src.updateUsrDialog()
-		return 1
+	else
+		..()
+
 
 /obj/machinery/computer/arcade/emp_act(severity)
 	if(stat & (NOPOWER|BROKEN))

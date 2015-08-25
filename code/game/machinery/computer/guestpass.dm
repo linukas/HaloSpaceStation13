@@ -5,7 +5,6 @@
 	name = "guest pass"
 	desc = "Allows temporary access to station areas."
 	icon_state = "guest"
-	light_color = "#0099ff"
 
 	var/temp_access = list() //to prevent agent cards stealing access as permanent
 	var/expiration_time = 0
@@ -43,9 +42,8 @@
 /obj/machinery/computer/guestpass
 	name = "guest pass terminal"
 	icon_state = "guest"
-	icon_keyboard = null
-	icon_screen = "pass"
 	density = 0
+
 
 	var/obj/item/weapon/card/id/giver
 	var/list/accesses = list()
@@ -62,14 +60,13 @@
 
 /obj/machinery/computer/guestpass/attackby(obj/O, mob/user)
 	if(istype(O, /obj/item/weapon/card/id))
-		if(!giver && user.unEquip(O))
+		if(!giver)
+			user.drop_item()
 			O.loc = src
 			giver = O
 			updateUsrDialog()
-		else if(giver)
+		else
 			user << "<span class='warning'>There is already ID card inside.</span>"
-		return
-	..()
 
 /obj/machinery/computer/guestpass/attack_ai(var/mob/user as mob)
 	return attack_hand(user)
@@ -117,11 +114,11 @@
 	if (href_list["choice"])
 		switch(href_list["choice"])
 			if ("giv_name")
-				var/nam = sanitize(input("Person pass is issued to", "Name", giv_name) as text|null)
+				var/nam = strip_html_simple(input("Person pass is issued to", "Name", giv_name) as text|null)
 				if (nam)
 					giv_name = nam
 			if ("reason")
-				var/reas = sanitize(input("Reason why pass is issued", "Reason", reason) as text|null)
+				var/reas = strip_html_simple(input("Reason why pass is issued", "Reason", reason) as text|null)
 				if(reas)
 					reason = reas
 			if ("duration")
@@ -152,7 +149,8 @@
 					accesses.Cut()
 				else
 					var/obj/item/I = usr.get_active_hand()
-					if (istype(I, /obj/item/weapon/card/id) && usr.unEquip(I))
+					if (istype(I, /obj/item/weapon/card/id))
+						usr.drop_item()
 						I.loc = src
 						giver = I
 				updateUsrDialog()
@@ -186,6 +184,6 @@
 					pass.reason = reason
 					pass.name = "guest pass #[number]"
 				else
-					usr << "<span class='warning'>Cannot issue pass without issuing ID.</span>"
+					usr << "\red Cannot issue pass without issuing ID."
 	updateUsrDialog()
 	return

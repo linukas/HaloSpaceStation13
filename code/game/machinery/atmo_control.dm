@@ -67,15 +67,15 @@
 /obj/machinery/air_sensor/initialize()
 	set_frequency(frequency)
 
-obj/machinery/air_sensor/Destroy()
-	if(radio_controller)
-		radio_controller.remove_object(src,frequency)
+/obj/machinery/air_sensor/New()
 	..()
+
+	if(radio_controller)
+		set_frequency(frequency)
 
 /obj/machinery/computer/general_air_control
 	icon = 'icons/obj/computer.dmi'
-	icon_keyboard = "atmos_key"
-	icon_screen = "tank"
+	icon_state = "tank"
 
 	name = "Computer"
 
@@ -85,11 +85,6 @@ obj/machinery/air_sensor/Destroy()
 	var/list/sensor_information = list()
 	var/datum/radio_frequency/radio_connection
 	circuit = /obj/item/weapon/circuitboard/air_management
-
-obj/machinery/computer/general_air_control/Destroy()
-	if(radio_controller)
-		radio_controller.remove_object(src, frequency)
-	..()
 
 /obj/machinery/computer/general_air_control/attack_hand(mob/user)
 	if(..(user))
@@ -159,6 +154,7 @@ obj/machinery/computer/general_air_control/Destroy()
 
 /obj/machinery/computer/general_air_control/large_tank_control
 	icon = 'icons/obj/computer.dmi'
+	icon_state = "tank"
 
 	frequency = 1441
 	var/input_tag
@@ -278,6 +274,7 @@ Max Output Pressure: [output_pressure] kPa<BR>"}
 
 /obj/machinery/computer/general_air_control/supermatter_core
 	icon = 'icons/obj/computer.dmi'
+	icon_state = "tank"
 
 	frequency = 1438
 	var/input_tag
@@ -397,7 +394,7 @@ Min Core Pressure: [pressure_limit] kPa<BR>"}
 
 /obj/machinery/computer/general_air_control/fuel_injection
 	icon = 'icons/obj/computer.dmi'
-	icon_screen = "alert:0"
+	icon_state = "atmos"
 
 	var/device_tag
 	var/list/device_info

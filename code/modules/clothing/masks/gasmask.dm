@@ -2,7 +2,7 @@
 	name = "gas mask"
 	desc = "A face-covering mask that can be connected to an air supply. Filters harmful gases from the air."
 	icon_state = "gas_alt"
-	item_flags = BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT
+	flags = MASKCOVERSMOUTH | MASKCOVERSEYES | BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT
 	flags_inv = HIDEEARS|HIDEEYES|HIDEFACE
 	body_parts_covered = FACE|EYES
 	w_class = 3.0
@@ -34,7 +34,7 @@
 	icon_state = "plaguedoctor"
 	item_state = "gas_mask"
 	armor = list(melee = 0, bullet = 0, laser = 2,energy = 2, bomb = 0, bio = 90, rad = 0)
-	body_parts_covered = HEAD|FACE|EYES
+	body_parts_covered = HEAD|FACE
 
 /obj/item/clothing/mask/gas/swat
 	name = "\improper SWAT mask"
@@ -42,12 +42,6 @@
 	icon_state = "swat"
 	siemens_coefficient = 0.7
 	body_parts_covered = FACE|EYES
-
-/obj/item/clothing/mask/gas/swat/vox
-	name = "\improper alien mask"
-	desc = "Clearly not designed for a human face."
-	body_parts_covered = 0 //Hack to allow vox to eat while wearing this mask. 
-	species_restricted = list("Vox")
 
 /obj/item/clothing/mask/gas/syndicate
 	name = "tactical mask"
@@ -57,7 +51,7 @@
 
 /obj/item/clothing/mask/gas/clown_hat
 	name = "clown wig and mask"
-	desc = "A true prankster's facial attire. A clown is incomplete without their wig and mask."
+	desc = "A true prankster's facial attire. A clown is incomplete without his wig and mask."
 	icon_state = "clown"
 	item_state = "clown_hat"
 
@@ -101,4 +95,3 @@
 	name = "owl mask"
 	desc = "Twoooo!"
 	icon_state = "owl"
-	body_parts_covered = HEAD|FACE|EYES

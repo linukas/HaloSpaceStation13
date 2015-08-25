@@ -3,9 +3,8 @@
 /obj/machinery/computer/aiupload
 	name = "\improper AI upload console"
 	desc = "Used to upload laws to the AI."
-	icon_keyboard = "rd_key"
-	icon_screen = "command"
-	circuit = /obj/item/weapon/circuitboard/aiupload
+	icon_state = "command"
+	circuit = "/obj/item/weapon/circuitboard/aiupload"
 	var/mob/living/silicon/ai/current = null
 	var/opened = 0
 
@@ -19,15 +18,15 @@
 
 		opened = !opened
 		if(opened)
-			usr << "<span class='notice'>The access panel is now open.</span>"
+			usr << "\blue The access panel is now open."
 		else
-			usr << "<span class='notice'>The access panel is now closed.</span>"
+			usr << "\blue The access panel is now closed."
 		return
 
 
 	attackby(obj/item/weapon/O as obj, mob/user as mob)
 		if (user.z > 6)
-			user << "<span class='danger'>Unable to establish a connection:</span> You're too far away from the station!"
+			user << "\red <b>Unable to establish a connection</b>: \black You're too far away from the station!"
 			return
 		if(istype(O, /obj/item/weapon/aiModule))
 			var/obj/item/weapon/aiModule/M = O
@@ -51,7 +50,7 @@
 		else
 			usr << "[src.current.name] selected for law changes."
 		return
-
+	
 	attack_ghost(user as mob)
 		return 1
 
@@ -59,9 +58,8 @@
 /obj/machinery/computer/borgupload
 	name = "cyborg upload console"
 	desc = "Used to upload laws to Cyborgs."
-	icon_keyboard = "rd_key"
-	icon_screen = "command"
-	circuit = /obj/item/weapon/circuitboard/borgupload
+	icon_state = "command"
+	circuit = "/obj/item/weapon/circuitboard/borgupload"
 	var/mob/living/silicon/robot/current = null
 
 

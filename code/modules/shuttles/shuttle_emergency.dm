@@ -28,9 +28,9 @@
 		emergency_shuttle.departed = 1
 
 		if (emergency_shuttle.evac)
-			priority_announcement.Announce("The Emergency Shuttle has left the station. Estimate [round(emergency_shuttle.estimate_arrival_time()/60,1)] minutes until the shuttle docks at [boss_name].")
+			priority_announcement.Announce("The Emergency Shuttle has left the station. Estimate [round(emergency_shuttle.estimate_arrival_time()/60,1)] minutes until the shuttle docks at Central Command.")
 		else
-			priority_announcement.Announce("The Crew Transfer Shuttle has left the station. Estimate [round(emergency_shuttle.estimate_arrival_time()/60,1)] minutes until the shuttle docks at [boss_name].")
+			priority_announcement.Announce("The Crew Transfer Shuttle has left the station. Estimate [round(emergency_shuttle.estimate_arrival_time()/60,1)] minutes until the shuttle docks at Central Command.")
 
 /datum/shuttle/ferry/emergency/can_launch(var/user)
 	if (istype(user, /obj/machinery/computer/shuttle_control/emergency))
@@ -155,13 +155,15 @@
 
 	return 1
 
-/obj/machinery/computer/shuttle_control/emergency/emag_act(var/remaining_charges, var/mob/user)
-	if (!emagged)
-		user << "<span class='notice'>You short out \the [src]'s authorization protocols.</span>"
-		emagged = 1
-		return 1
+
+
 
 /obj/machinery/computer/shuttle_control/emergency/attackby(obj/item/weapon/W as obj, mob/user as mob)
+	if (istype(W, /obj/item/weapon/card/emag) && !emagged)
+		user << "<span class='notice'>You short out \the [src]'s authorization protocols.</span>"
+		emagged = 1
+		return
+
 	read_authorization(W)
 	..()
 
@@ -185,7 +187,7 @@
 			else if (!shuttle.location)
 				shuttle_status = "Standing-by at [station_name]."
 			else
-				shuttle_status = "Standing-by at [boss_name]."
+				shuttle_status = "Standing-by at Central Command."
 		if(WAIT_LAUNCH, FORCE_LAUNCH)
 			shuttle_status = "Shuttle has recieved command and will depart shortly."
 		if(WAIT_ARRIVE)

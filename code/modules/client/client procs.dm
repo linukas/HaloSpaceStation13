@@ -52,7 +52,7 @@
 		if(mute_irc)
 			usr << "<span class='warning'You cannot use this as your client has been muted from sending messages to the admins on IRC</span>"
 			return
-		cmd_admin_irc_pm(href_list["irc_msg"])
+		cmd_admin_irc_pm()
 		return
 
 
@@ -145,20 +145,16 @@
 	if(custom_event_msg && custom_event_msg != "")
 		src << "<h1 class='alert'>Custom Event</h1>"
 		src << "<h2 class='alert'>A custom event is taking place. OOC Info:</h2>"
-		src << "<span class='alert'>[custom_event_msg]</span>"
+		src << "<span class='alert'>[html_encode(custom_event_msg)]</span>"
 		src << "<br>"
 
+	if( (world.address == address || !address) && !host )
+		host = key
+		world.update_status()
 
 	if(holder)
 		add_admin_verbs()
 		admin_memo_show()
-
-	// Forcibly enable hardware-accelerated graphics, as we need them for the lighting overlays.
-	// (but turn them off first, since sometimes BYOND doesn't turn them on properly otherwise)
-	spawn(5) // And wait a half-second, since it sounds like you can do this too fast.
-		if(src)
-			winset(src, null, "command=\".configure graphics-hwmode off\"")
-			winset(src, null, "command=\".configure graphics-hwmode on\"")
 
 	log_client_to_db()
 
@@ -166,11 +162,7 @@
 	nanomanager.send_resources(src)
 
 	if(prefs.lastchangelog != changelog_hash) //bolds the changelog button on the interface so we know there are updates.
-		src << "<span class='info'>You have unread updates in the changelog.</span>"
 		winset(src, "rpane.changelog", "background-color=#eaeaea;font-style=bold")
-		if(config.aggressive_changelog)
-			src.changes()
-
 
 
 	//////////////
@@ -286,9 +278,8 @@
 	getFiles(
 		'html/search.js',
 		'html/panels.css',
-		'html/images/loading.gif',
-		'html/images/ntlogo.png',
-		'html/images/talisman.png',
+		'html/painew.png',
+		'html/loading.gif',
 		'icons/pda_icons/pda_atmos.png',
 		'icons/pda_icons/pda_back.png',
 		'icons/pda_icons/pda_bell.png',
@@ -326,7 +317,9 @@
 		'icons/spideros_icons/sos_11.png',
 		'icons/spideros_icons/sos_12.png',
 		'icons/spideros_icons/sos_13.png',
-		'icons/spideros_icons/sos_14.png'
+		'icons/spideros_icons/sos_14.png',
+		'html/images/ntlogo.png',
+		'html/images/talisman.png'
 		)
 
 
